@@ -2,7 +2,10 @@
 #include <vector>
 #include <random>
 #include <chrono>
+#include <thread>
 
+
+int sum = 0;
 
 std::vector<int> randomVector(int& count)
 {
@@ -13,25 +16,49 @@ std::vector<int> randomVector(int& count)
     std::generate(vector.begin(), vector.end(), rand_num);
     return vector;
 }
-double SumVector(std::vector<int>& a_vector, std::vector<int>& b_vector)
+void SumVector(std::vector<int>& a_vector, std::vector<int>& b_vector, int it)
 {
-    auto start = std::chrono::steady_clock::now();
-    std::vector<int> sumVector(a_vector.size());
-    for (int i = 0; i < a_vector.size() - 1; i++)
+    for (; it < a_vector.size(); it++)
     {
-        sumVector[i] = a_vector[i] + b_vector[i];
+        sum += a_vector[it] + b_vector[it];
     }
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double,std::milli> time = end - start;
-    return time.count();
+    
+    
+   
 }
 
+
+  
 int main()
 {
+    std::cout << std::thread::hardware_concurrency() << std::endl;
+    size_t count_threads = 4;
     int count = 1000;
     std::vector<int> vector_1 = randomVector(count);
     std::vector<int> vector_2 = randomVector(count);
- 
-    double time = SumVector(vector_1, vector_2);
-    std::cout << "Time: " << time << std::endl;
+    
+    
+    
+    for (int i = 0; i < count_threads; i++)
+    {
+        
+        for (int j = 0; j < count; j++)
+        {
+            auto start = std::chrono::steady_clock::now();
+            std::vector<std::thread> VT;
+            VT.push_back(std::thread(SumVector, ref(vector_1), ref(vector_2), j));
+            for (auto& jt : VT)
+            {
+                jt.join();
+            }
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::duration<double, std::milli> time = end - start;
+            std::cout << "Time with " << i << ": " << time.count() << std::endl;
+        }
+        
+    }
+    
+    
+    
+    std::cout << "Sum: " << sum << std::endl;
 }
