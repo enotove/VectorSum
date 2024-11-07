@@ -6,6 +6,8 @@
 
 
 int sum = 0;
+int it = 0;
+double time_all = 0.0;
 
 std::vector<int> randomVector(int& count)
 {
@@ -18,10 +20,14 @@ std::vector<int> randomVector(int& count)
 }
 void SumVector(std::vector<int>& a_vector, std::vector<int>& b_vector, int it)
 {
+    auto start = std::chrono::steady_clock::now();
     for (; it < a_vector.size(); it++)
     {
         sum += a_vector[it] + b_vector[it];
     }
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration < double, std::milli> time = end - start;
+    time_all += time.count();
     
     
    
@@ -32,33 +38,40 @@ void SumVector(std::vector<int>& a_vector, std::vector<int>& b_vector, int it)
 int main()
 {
     std::cout << std::thread::hardware_concurrency() << std::endl;
-    size_t count_threads = 4;
-    int count = 1000;
-    std::vector<int> vector_1 = randomVector(count);
-    std::vector<int> vector_2 = randomVector(count);
-    
-    
-    
-    for (int i = 0; i < count_threads; i++)
+    std::vector<int> counts_threads{ 1,2,4,8,16 };
+    std::vector<int> count_numbers{ 1000, 10'000, 100'000, 1'000'000 };
+    for (int count_n : count_numbers)
     {
+        time_all = 0.0;
+        sum = 0;
+        it = 0;
+        std::vector<int> vector_1 = randomVector(count_n);
+        std::vector<int> vector_2 = randomVector(count_n);
         
-        for (int j = 0; j < count; j++)
+        
+
+        for (int count_t : counts_threads)
         {
-            auto start = std::chrono::steady_clock::now();
+            
             std::vector<std::thread> VT;
-            VT.push_back(std::thread(SumVector, ref(vector_1), ref(vector_2), j));
+           
+            for (int i = 0; i < count_t; i++)
+            {
+                VT.push_back(std::thread(SumVector, ref(vector_1), ref(vector_2), it));
+            }
+           
             for (auto& jt : VT)
             {
                 jt.join();
             }
-            auto end = std::chrono::steady_clock::now();
-            std::chrono::duration<double, std::milli> time = end - start;
-            std::cout << "Time with " << i << ": " << time.count() << std::endl;
+
+            std::cout << count_t << " threads and " << count_n << " numbers in vector, time: " << time_all << std::endl;
         }
         
     }
     
     
     
-    std::cout << "Sum: " << sum << std::endl;
+    
+   
 }
